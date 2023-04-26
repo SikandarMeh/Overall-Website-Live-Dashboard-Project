@@ -1,0 +1,19 @@
+SELECT item_name,
+item_brand,
+item_quantity,
+return_quantity,
+SUM(return_quantity)/SUM(item_quantity) AS return_rate
+FROM 
+  (SELECT item_name, 
+  item_brand,
+  returns.item_quantity, 
+  return_quantity
+
+  FROM `prism-2023-c1.Prism_Main.productattributes` AS att
+  JOIN `prism-2023-c1.Prism_Main.product_returns` AS returns
+  ON att.item_id = returns.item_id
+  JOIN `prism-2023-c1.Prism_Main.transactionsanditems` transitems
+  ON att.item_id = transitems.item_id)
+-- where item_quantity > 1 -- only consider items ordered more than once 
+GROUP BY item_name, item_brand,3,4
+ORDER BY return_rate DESC 
