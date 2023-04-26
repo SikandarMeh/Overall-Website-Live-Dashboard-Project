@@ -1,0 +1,24 @@
+SELECT 
+  pa.item_name,
+  pa.item_brand,
+  pa.item_main_category,
+  pa.item_sub_category,
+  MAX(pl.item_list_price - pc.cost_of_item) AS Best_Profit_GBP_Per_Item,
+  MAX((pl.item_list_price - pc.cost_of_item) / pl.item_list_price) AS Best_Profit_Margin_Per_Item
+FROM 
+  `prism-2023-c1.Prism_Main.product_costs` pc
+JOIN 
+  `prism-2023-c1.Prism_Main.productattributes` pa
+ON 
+  pc.item_id = pa.item_id
+JOIN 
+  `prism-2023-c1.Prism_Main.product_listprices` pl
+ON 
+  pc.item_id = pl.item_id
+GROUP BY
+  pa.item_main_category,
+  pa.item_sub_category,
+  pa.item_name,
+  pa.item_brand
+ORDER BY 
+  Best_Profit_Margin_Per_Item DESC;
