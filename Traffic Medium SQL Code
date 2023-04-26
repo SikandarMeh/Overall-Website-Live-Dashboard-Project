@@ -1,0 +1,16 @@
+SELECT date, traffic_medium,traffic_source, no_visits, no_transactions, (no_transactions/no_visits)*100 as conversion_rate, total_revenue, 
+(total_revenue/no_transactions) as AOV
+--
+FROM(  
+  SELECT traffic_medium,traffic_source, date, COUNT(distinct(session_id)) as no_visits, COUNT(distinct(transaction_id)) as no_transactions,
+  SUM(transaction_revenue) AS total_revenue
+--
+  FROM(  
+    SELECT distinct(s.session_id), s.date as date, s.traffic_medium, s.traffic_source, t.transaction_id, t.transaction_revenue
+    FROM `prism-2023-c1.Prism_Main.sessions` as s
+    LEFT JOIN `prism-2023-c1.Prism_Main.transactions` as t
+    on s.session_id = t.session_id
+  )
+  group by date, traffic_medium, traffic_source
+)
+order by date, traffic_medium, traffic_source
