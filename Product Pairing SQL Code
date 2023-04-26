@@ -1,0 +1,43 @@
+-- number of items per transaction
+WITH items_transactions AS (
+  SELECT transaction_id,item_name,
+  COUNT(*) AS c
+  FROM `prism-2023-c1.Prism_Main.transactionsanditems` AS transitem
+  JOIN
+  `prism-2023-c1.Prism_Main.productattributes` AS att
+  ON transitem.item_id = att.item_id
+  GROUP BY 1,2 
+  ),
+
+-- select transaction_ids where at least 2 different items were ordered per transaction
+item_pairings AS (SELECT * 
+FROM items_transactions 
+WHERE transaction_id IN 
+(
+  SELECT transaction_id 
+  FROM 
+  (
+    SELECT transaction_id,
+    COUNT(transaction_id)
+    FROM items_transactions 
+    GROUP BY 1
+    HAVING COUNT(transaction_id) > 1 
+  )
+     
+) ORDER BY 1),
+
+-- aggregate items ordered per transaction
+final_item_pairings as (select distinct transaction_id,items_ordered from
+(SELECT *,
+ STRING_AGG(item_name) OVER (
+  PARTITION BY transaction_id 
+  ORDER BY item_name
+  ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
+  ) AS items_ordered FROM item_pairings)
+ORDER BY 1)
+
+SELECT REPLACE(items_ordered,',',' & ') AS items_ordered,
+COUNT(*) AS num_orders 
+FROM final_item_pairings
+GROUP BY 1 
+ORDER BY num_orders DESC 
