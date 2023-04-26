@@ -1,0 +1,52 @@
+--Subquery that calculates the total revenue for each item_id
+
+WITH item_revenue as (
+  SELECT ti.item_id, SUM(transaction_revenue) as total_item_revenue
+  FROM `prism-2023-c1.Prism_Main.transactionsanditems` as ti
+  JOIN `prism-2023-c1.Prism_Main.transactions` as t
+  ON ti.transaction_id = t.transaction_id
+  GROUP BY item_id
+),
+
+--Subquery that converts to a numeric expression for the occurence of a funnel event. displays item name and ids as well
+item_funnel as (
+  SELECT f.date, f.event_name, p.item_main_category, p.item_sub_category, p.item_name, p.item_brand, p.item_id,
+    CASE WHEN event_name = 'view_item' THEN 1
+    ELSE 0
+    END AS view_item,
+    CASE WHEN event_name = 'add_to_cart' THEN 1
+    ELSE 0
+    END AS add_to_cart,
+    CASE WHEN event_name = 'purchase' THEN 1
+    ELSE 0
+    END AS purchases,
+    FROM `prism-2023-c1.Prism_Main.funnelevents` as f
+    JOIN `prism-2023-c1.Prism_Main.productattributes` as p
+    ON f.item_id = p.item_id
+),
+--subquery that calculates the dropoff and abandoment rate
+item_funnel2 as(
+SELECT item_main_category, item_sub_category, item_name, item_brand, item_id,  no_view_item, no_add_to_cart, no_purchases, 1.0 - (no_add_to_cart/no_view_item) AS dropoff_rate, 1.0 - (no_purchases/no_add_to_cart) as abandonment_rate
+  FROM(
+-- subquery that sums the funnel events together
+    SELECT item_main_category, item_sub_category, item_name, item_brand, item_id,
+    SUM(view_item) as no_view_item, SUM(add_to_cart) as no_add_to_cart, SUM(purchases) as no_purchases
+    FROM item_funnel
+    GROUP BY item_main_category, item_sub_category, item_name, item_brand, item_id
+  )
+--makes sure there is no divisable by 0 error. 
+where no_view_item > 0 and no_add_to_cart > 0
+),
+
+--subquery that joins the previous table to the item revenue table
+
+final_funnel as(
+  SELECT item_main_category, item_sub_category, item_name, item_brand, item_funnel2.item_id, no_view_item, no_add_to_cart, no_purchases, dropoff_rate, abandonment_rate, total_item_revenue
+  FROM item_funnel2
+  JOIN item_revenue
+  ON item_funnel2.item_id = item_revenue.item_id
+)
+
+SELECT *
+FROM final_funnel
+where dropoff_rate < 1 OR abandonment_rate <1 ;
