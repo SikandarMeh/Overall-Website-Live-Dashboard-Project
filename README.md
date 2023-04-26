@@ -1,8 +1,7 @@
 # Overall-Website-Live-Dashboard
 The objective of this project is to conduct a holistic business assessment by leveraging Prism's database of customer, marketing, transactional, web, and product data. The goal is to identify problem areas and opportunities for improvement across all these parts, and to provide recommendations for enhancing business performance.
+
 Scope
-
-
 The project will focus on the following areas:
 Customer: Analysis of customer data to identify different customer segments based on demographics, behavior, and purchasing patterns.
 Marketing: evaluating the effectiveness of different marketing channels and campaigns in driving traffic and conversions.
